@@ -47,6 +47,17 @@ app.use((req, res, next) => {
     throw err;
   });
 
+  // Override static file handling for ads.txt to ensure our redirect works
+  app.get('/ads.txt', (req, res) => {
+    // Get the host from the request header
+    const host = req.headers.host || 'heicflip.com';
+    const domain = host.replace(/:\d+$/, ''); // Remove port if present
+    
+    // Redirect to Ezoic's ads.txt manager
+    log(`Redirecting ads.txt request to Ezoic for domain: ${domain}`);
+    res.redirect(301, `https://srv.adstxtmanager.com/19390/${domain}`);
+  });
+
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes

@@ -3,9 +3,34 @@ import Header from "@/components/Header";
 import HowItWorks from "@/components/HowItWorks";
 import DropConvert from "@/components/DropConvert";
 import TechnicalDetails from "@/components/TechnicalDetails";
+import FAQ from "@/components/FAQ";
 import { siteConfig } from "@/config";
+import { useEffect } from "react";
 
 export default function Home() {
+  // Dynamic SEO setup based on the current conversion mode
+  useEffect(() => {
+    // Determine title and meta description based on conversion mode
+    let title, description;
+    
+    if (siteConfig.defaultConversionMode === 'heicToJpg') {
+      title = "Convert HEIC to JPG Online - Free HEIC Image Converter | HEICFlip";
+      description = "Convert HEIC images to JPG format instantly online with HEICFlip. Fast, free, secure HEIC to JPG converter. No signup required.";
+    } else {
+      title = "Convert JPG to HEIC Online - Free JPG Image Converter | HEICFlip";
+      description = "Convert JPG images to HEIC format instantly online with HEICFlip. Fast, free, secure JPG to HEIC converter. No signup required.";
+    }
+    
+    // Set the document title
+    document.title = title;
+    
+    // Update meta description
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', description);
+    }
+  }, []);
+
   return (
     <div className="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
       <div className="flex-grow">
@@ -17,8 +42,9 @@ export default function Home() {
             <div className="text-center mb-8">
               <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
                 {siteConfig.defaultConversionMode === 'heicToJpg' 
-                  ? 'Convert HEIC to JPG' 
-                  : 'Convert JPG to HEIC'}
+                  ? 'Free HEIC to JPG Converter - Instant Online Conversion'
+                  : 'Free JPG to HEIC Converter - Instant Online Conversion'
+                }
               </h1>
               <p className="mt-3 text-xl text-gray-500 sm:mt-4">
                 Fast, free, and completely private - no files are uploaded to any server
@@ -28,6 +54,7 @@ export default function Home() {
             <DropConvert />
             <HowItWorks />
             <TechnicalDetails />
+            <FAQ />
           </div>
         </main>
         
