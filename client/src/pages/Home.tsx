@@ -14,10 +14,10 @@ export default function Home() {
     let title, description;
     
     if (siteConfig.defaultConversionMode === 'heicToJpg') {
-      title = "Convert HEIC to JPG Online - Free HEIC Image Converter | HEICFlip";
+      title = "Free HEIC to JPG Converter - Instant Online Conversion";
       description = "Convert HEIC images to JPG format instantly online with HEICFlip. Fast, free, secure HEIC to JPG converter. No signup required.";
     } else {
-      title = "Convert JPG to HEIC Online - Free JPG Image Converter | HEICFlip";
+      title = "Free JPG to HEIC Converter - Instant Online Conversion";
       description = "Convert JPG images to HEIC format instantly online with HEICFlip. Fast, free, secure JPG to HEIC converter. No signup required.";
     }
     
@@ -42,8 +42,8 @@ export default function Home() {
             <div className="text-center mb-8">
               <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
                 {siteConfig.defaultConversionMode === 'heicToJpg' 
-                  ? 'Free HEIC to JPG Converter - Instant Online Conversion'
-                  : 'Free JPG to HEIC Converter - Instant Online Conversion'
+                  ? 'Convert HEIC to JPG'
+                  : 'Convert JPG to HEIC'
                 }
               </h1>
               <p className="mt-3 text-xl text-gray-500 sm:mt-4">
