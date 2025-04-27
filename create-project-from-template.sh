@@ -61,16 +61,21 @@ elif [[ "$PRIMARY_COLOR" == "#DD7230" ]]; then
   ACCENT_COLOR="#F39C6B"
 else
   SECONDARY_COLOR=$(echo "$PRIMARY_COLOR" | sed -E 's/#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})/\1 \2 \3/g' | awk '{
-    r = sprintf("%02x", int("0x"$1) * 0.8);
-    g = sprintf("%02x", int("0x"$2) * 0.8);
-    b = sprintf("%02x", int("0x"$3) * 0.8);
+    r = sprintf("%02x", int(int("0x"$1) * 0.8));
+    g = sprintf("%02x", int(int("0x"$2) * 0.8));
+    b = sprintf("%02x", int(int("0x"$3) * 0.8));
     print "#"r""g""b;
   }')
   
   ACCENT_COLOR=$(echo "$PRIMARY_COLOR" | sed -E 's/#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})/\1 \2 \3/g' | awk '{
-    r = sprintf("%02x", min(int("0x"$1) * 1.2, 255));
-    g = sprintf("%02x", min(int("0x"$2) * 1.2, 255));
-    b = sprintf("%02x", min(int("0x"$3) * 1.2, 255));
+    r_val = int("0x"$1) * 1.2;
+    g_val = int("0x"$2) * 1.2;
+    b_val = int("0x"$3) * 1.2;
+    
+    r = sprintf("%02x", r_val > 255 ? 255 : int(r_val));
+    g = sprintf("%02x", g_val > 255 ? 255 : int(g_val));
+    b = sprintf("%02x", b_val > 255 ? 255 : int(b_val));
+    
     print "#"r""g""b;
   }')
 fi
