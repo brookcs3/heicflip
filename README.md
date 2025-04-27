@@ -1,6 +1,6 @@
 # HEICFlip
 
-A browser-based image converter that transforms photos between HEIC and JPG formats with complete privacy. All processing happens locally in your browser—no uploads required.
+A browser-based image converter that transforms photos between HEIC and JPG formats with complete privacy. All processing happens locally in your browser—no uploads required. Fast and secure!
 
 ## Features
 
