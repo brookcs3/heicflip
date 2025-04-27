@@ -82,9 +82,12 @@ fi
 
 cd "$PROJECT_DIR" || exit
 
-rm -f create-project-from-template.sh
-rm -f template-tracker-update.sh
-rm -f TEMPLATE-USAGE.md
+cp ../create-project-from-template.sh .
+cp ../template-tracker-update.sh .
+cp ../NewSite.Go .
+chmod +x create-project-from-template.sh
+chmod +x template-tracker-update.sh
+chmod +x NewSite.Go
 
 sed -i "s/\"name\": \".*\"/\"name\": \"${SITE_NAME,,}\"/g" package.json
 
