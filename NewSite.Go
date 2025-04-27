@@ -34,8 +34,8 @@ if [[ -z "$FOLDER" ]]; then
   exit 1
 fi
 
-# Generate project name with first letter capitalized
-PROJECT_NAME="${FOLDER^}"
+# Use the folder name directly for the project name and repository name
+PROJECT_NAME="$FOLDER"
 
 echo ""
 echo "Creating project with the following settings:"
