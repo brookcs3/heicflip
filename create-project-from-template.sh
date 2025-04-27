@@ -1,8 +1,9 @@
 
 
+
 if [ "$#" -lt 4 ]; then
   echo "Usage: $0 <project-directory> <site-name> <primary-color> <conversion-mode>"
-  echo "Example: $0 webpflip \"WebPFlip\" \"#9333ea\" \"jpgToWebp\""
+  echo "Example: $0 webpflip \"WebPFlip\" \"#9333ea\" \"webpToJpg\""
   exit 1
 fi
 
@@ -10,6 +11,17 @@ PROJECT_DIR="$1"
 SITE_NAME="$2"
 PRIMARY_COLOR="$3"
 CONVERSION_MODE="$4"
+
+INPUT_FORMAT=$(echo "$CONVERSION_MODE" | sed -E 's/([a-z]+)To([A-Z][a-z]+)/\1/g')
+OUTPUT_FORMAT=$(echo "$CONVERSION_MODE" | sed -E 's/([a-z]+)To([A-Z][a-z]+)/\2/g')
+REPO_NAME="${INPUT_FORMAT^}to${OUTPUT_FORMAT^}"
+
+echo "Creating project with the following settings:"
+echo "- Project Directory: $PROJECT_DIR"
+echo "- Site Name: $SITE_NAME"
+echo "- Primary Color: $PRIMARY_COLOR"
+echo "- Conversion Mode: $CONVERSION_MODE"
+echo "- Repository Name: $REPO_NAME"
 
 mkdir -p "$PROJECT_DIR"
 
@@ -157,10 +169,33 @@ Build command: \`npm run build\`
 Build output directory: \`dist/public\`
 EOF
 
-../template-tracker-update.sh "$SITE_NAME" "$CONVERSION_MODE" "$PRIMARY_COLOR" "$PROJECT_DIR"
+git init
+git add .
+git commit -m "Initial commit for ${SITE_NAME}"
 
-echo "Project created successfully at $PROJECT_DIR"
-echo "Next steps:"
-echo "1. cd $PROJECT_DIR"
+echo "Creating GitHub repository for ${REPO_NAME}..."
+gh repo create "${REPO_NAME}" --public --description "Browser-based ${INPUT_FORMAT} to ${OUTPUT_FORMAT} converter" --source=. --remote=origin --push
+
+REPO_OWNER=$(gh api user | jq -r '.login')
+FULL_REPO_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}"
+
+cd ..
+./template-tracker-update.sh "$SITE_NAME" "$CONVERSION_MODE" "$PRIMARY_COLOR" "$PROJECT_DIR" "$FULL_REPO_URL"
+
+echo "Project created successfully!"
+echo "GitHub repository: $FULL_REPO_URL"
+echo ""
+echo "The code has been pushed to GitHub. You can clone it with:"
+echo "git clone $FULL_REPO_URL"
+echo ""
+echo "To run the project locally:"
+echo "1. cd $REPO_NAME"
 echo "2. npm install"
 echo "3. npm run dev"
+
+read -p "Do you want to remove the local working copy? (y/n): " REMOVE_LOCAL
+if [[ "$REMOVE_LOCAL" == "y" || "$REMOVE_LOCAL" == "Y" ]]; then
+  echo "Removing local working copy..."
+  rm -rf "$PROJECT_DIR"
+  echo "Local working copy removed."
+fi

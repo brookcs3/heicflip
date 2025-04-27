@@ -1,7 +1,8 @@
 
 
+
 if [ "$#" -lt 4 ]; then
-  echo "Usage: $0 <site-name> <conversion-mode> <primary-color> <project-dir>"
+  echo "Usage: $0 <site-name> <conversion-mode> <primary-color> <project-dir> [repo-url]"
   exit 1
 fi
 
@@ -9,6 +10,7 @@ SITE_NAME="$1"
 CONVERSION_MODE="$2"
 PRIMARY_COLOR="$3"
 PROJECT_DIR="$4"
+REPO_URL="${5:-}"
 
 TRACKER_DIR="$HOME/template-tracker"
 mkdir -p "$TRACKER_DIR"
@@ -41,7 +43,7 @@ NEW_ENTRY="{
   \"primaryColor\": \"$PRIMARY_COLOR\",
   \"projectDir\": \"$PROJECT_DIR\",
   \"createdAt\": \"$CURRENT_DATE\",
-  \"repoUrl\": \"\"
+  \"repoUrl\": \"$REPO_URL\"
 }"
 
 if [ "$CONVERSIONS" = "[]" ]; then
@@ -52,15 +54,19 @@ fi
 
 README=$(cat README.md)
 
-NEW_PROJECT="| $SITE_NAME | $CONVERSION_MODE | $PRIMARY_COLOR | $CURRENT_DATE |"
-
-if ! grep -q "| Site Name | Conversion Mode | Primary Color | Created At |" README.md; then
-  echo "" >> README.md
-  echo "| Site Name | Conversion Mode | Primary Color | Created At |" >> README.md
-  echo "| --- | --- | --- | --- |" >> README.md
+if [[ -n "$REPO_URL" ]]; then
+  NEW_PROJECT="| $SITE_NAME | $CONVERSION_MODE | $PRIMARY_COLOR | $CURRENT_DATE | [$REPO_URL]($REPO_URL) |"
+else
+  NEW_PROJECT="| $SITE_NAME | $CONVERSION_MODE | $PRIMARY_COLOR | $CURRENT_DATE | - |"
 fi
 
-sed -i "/| --- | --- | --- | --- |/a $NEW_PROJECT" README.md
+if ! grep -q "| Site Name | Conversion Mode | Primary Color | Created At | Repository |" README.md; then
+  echo "" >> README.md
+  echo "| Site Name | Conversion Mode | Primary Color | Created At | Repository |" >> README.md
+  echo "| --- | --- | --- | --- | --- |" >> README.md
+fi
+
+sed -i "/| --- | --- | --- | --- | --- |/a $NEW_PROJECT" README.md
 
 git add conversions.json README.md
 git commit -m "Add $SITE_NAME project"
