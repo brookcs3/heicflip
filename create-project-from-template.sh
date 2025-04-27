@@ -226,7 +226,7 @@ else
       https://api.github.com/user/repos \
       -d "{\"name\":\"$REPO_NAME\",\"description\":\"Browser-based ${INPUT_FORMAT} to ${OUTPUT_FORMAT} converter\",\"private\":false}")
     
-    if echo "$REPO_CREATION_RESPONSE" | grep -q "\"name\":\"$REPO_NAME\""; then
+    if echo "$REPO_CREATION_RESPONSE" | grep -q "\"name\"[[:space:]]*:[[:space:]]*\"$REPO_NAME\""; then
       echo "Repository created successfully with GitHub API!"
       FULL_REPO_URL="https://github.com/${GITHUB_USERNAME}/${REPO_NAME}"
       
