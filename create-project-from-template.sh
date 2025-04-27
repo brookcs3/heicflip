@@ -179,23 +179,52 @@ git add .
 git commit -m "Initial commit for ${SITE_NAME}"
 
 echo "Creating GitHub repository for ${REPO_NAME}..."
+GITHUB_USERNAME=$(gh api user | jq -r '.login' 2>/dev/null)
+
+if [ -z "$GITHUB_USERNAME" ]; then
+  GITHUB_USERNAME="YOUR_USERNAME"
+fi
+
 if gh repo create "${REPO_NAME}" --public --description "Browser-based ${INPUT_FORMAT} to ${OUTPUT_FORMAT} converter" --source=. --remote=origin --push; then
-  REPO_OWNER=$(gh api user | jq -r '.login')
-  FULL_REPO_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}"
+  FULL_REPO_URL="https://github.com/${GITHUB_USERNAME}/${REPO_NAME}"
   echo "Repository created successfully: $FULL_REPO_URL"
 else
-  echo "Warning: Failed to create GitHub repository. You may need to create it manually."
-  echo "To create the repository manually:"
+  echo "Repository creation via API failed. This is likely due to API limitations."
+  echo ""
+  echo "To complete the repository creation:"
+  echo "----------------------------------------"
   echo "1. Go to https://github.com/new"
   echo "2. Name the repository: ${REPO_NAME}"
   echo "3. Make it public"
   echo "4. Add the description: Browser-based ${INPUT_FORMAT} to ${OUTPUT_FORMAT} converter"
   echo "5. Create repository"
-  echo "6. Push your local code with:"
-  echo "   git remote add origin https://github.com/YOUR_USERNAME/${REPO_NAME}.git"
+  echo "6. Then run these commands in your project directory:"
+  echo "   cd ${PROJECT_DIR}"
+  echo "   git remote add origin https://github.com/${GITHUB_USERNAME}/${REPO_NAME}.git"
   echo "   git push -u origin master"
+  echo "----------------------------------------"
   
-  FULL_REPO_URL="(manual creation required)"
+  read -p "Would you like to try setting up the remote and pushing now? (y/n): " SETUP_REMOTE
+  if [[ "$SETUP_REMOTE" == "y" || "$SETUP_REMOTE" == "Y" ]]; then
+    echo "Enter your GitHub username:"
+    read -p "GitHub username: " GITHUB_USER
+    
+    if [ -n "$GITHUB_USER" ]; then
+      echo "Setting up remote and pushing to GitHub..."
+      git remote add origin "https://github.com/${GITHUB_USER}/${REPO_NAME}.git"
+      if git push -u origin master; then
+        FULL_REPO_URL="https://github.com/${GITHUB_USER}/${REPO_NAME}"
+        echo "Successfully pushed to $FULL_REPO_URL"
+      else
+        echo "Push failed. You may need to create the repository first."
+        FULL_REPO_URL="(manual creation required)"
+      fi
+    else
+      FULL_REPO_URL="(manual creation required)"
+    fi
+  else
+    FULL_REPO_URL="(manual creation required)"
+  fi
 fi
 
 cd ..
