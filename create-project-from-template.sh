@@ -82,8 +82,17 @@ fi
 
 cd "$PROJECT_DIR" || exit
 
-rm -f create-project-from-template.sh
-rm -f template-tracker-update.sh
+cp "../NewSite.Go" ./
+cp "../template-tracker-update.sh" ./
+cp "../create-project-from-template.sh" ./
+
+chmod +x NewSite.Go
+chmod +x template-tracker-update.sh
+chmod +x create-project-from-template.sh
+
+INPUT_FORMAT_UPPER=$(echo "$INPUT_FORMAT" | tr '[:lower:]' '[:upper:]')
+OUTPUT_FORMAT_UPPER=$(echo "$OUTPUT_FORMAT" | tr '[:lower:]' '[:upper:]')
+
 rm -f TEMPLATE-USAGE.md
 
 sed -i "s/\"name\": \".*\"/\"name\": \"${SITE_NAME,,}\"/g" package.json
@@ -122,8 +131,8 @@ const siteConfig: SiteConfig = {
   accentColor: '${ACCENT_COLOR}',
   logoText: '${SITE_NAME}',
   domain: '${SITE_NAME,,}.com',
-  description: 'Convert ${CONVERSION_MODE} in your browser',
-  keywords: ['${CONVERSION_MODE}', 'conversion', 'browser-based'],
+  description: 'Convert ${INPUT_FORMAT_UPPER} images to ${OUTPUT_FORMAT_UPPER} format in your browser',
+  keywords: ['${INPUT_FORMAT}', '${OUTPUT_FORMAT}', 'image conversion', 'browser-based'],
   showAdvancedOptions: false
 };
 
@@ -145,6 +154,19 @@ export * from './site-config';
 EOF
 
 cp "../client/src/config/conversion-config.ts" "$CONFIG_DIR/"
+
+echo "Updating format references in components..."
+
+find "./client/src" -type f -name "*.tsx" -o -name "*.ts" | xargs sed -i "s/HEIC/$INPUT_FORMAT_UPPER/g"
+find "./client/src" -type f -name "*.tsx" -o -name "*.ts" | xargs sed -i "s/heic/$INPUT_FORMAT/g"
+find "./client/src" -type f -name "*.tsx" -o -name "*.ts" | xargs sed -i "s/JPG/$OUTPUT_FORMAT_UPPER/g"
+find "./client/src" -type f -name "*.tsx" -o -name "*.ts" | xargs sed -i "s/jpg/$OUTPUT_FORMAT/g"
+find "./client/src" -type f -name "*.tsx" -o -name "*.ts" | xargs sed -i "s/HEICFlip/$SITE_NAME/g"
+
+find "./client/src/workers" -type f -name "*.ts" | xargs sed -i "s/\.heic/\.$INPUT_FORMAT/g"
+find "./client/src/workers" -type f -name "*.ts" | xargs sed -i "s/\.jpg/\.$OUTPUT_FORMAT/g"
+find "./client/src/workers" -type f -name "*.ts" | xargs sed -i "s/image\/heic/image\/$INPUT_FORMAT/g"
+find "./client/src/workers" -type f -name "*.ts" | xargs sed -i "s/image\/jpeg/image\/$OUTPUT_FORMAT/g"
 
 cat > "README.md" << EOF
 
