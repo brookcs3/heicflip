@@ -82,9 +82,12 @@ fi
 
 cd "$PROJECT_DIR" || exit
 
-rm -f create-project-from-template.sh
-rm -f template-tracker-update.sh
-rm -f TEMPLATE-USAGE.md
+cp ../create-project-from-template.sh .
+cp ../template-tracker-update.sh .
+cp ../NewSite.Go .
+chmod +x create-project-from-template.sh
+chmod +x template-tracker-update.sh
+chmod +x NewSite.Go
 
 sed -i "s/\"name\": \".*\"/\"name\": \"${SITE_NAME,,}\"/g" package.json
 
@@ -179,23 +182,134 @@ git add .
 git commit -m "Initial commit for ${SITE_NAME}"
 
 echo "Creating GitHub repository for ${REPO_NAME}..."
+REPO_CREATED=false
+GITHUB_USERNAME=""
+
+echo "Attempting repository creation with GitHub CLI..."
 if gh repo create "${REPO_NAME}" --public --description "Browser-based ${INPUT_FORMAT} to ${OUTPUT_FORMAT} converter" --source=. --remote=origin --push; then
-  REPO_OWNER=$(gh api user | jq -r '.login')
-  FULL_REPO_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}"
-  echo "Repository created successfully: $FULL_REPO_URL"
+  GITHUB_USERNAME=$(gh api user | jq -r '.login' 2>/dev/null)
+  FULL_REPO_URL="https://github.com/${GITHUB_USERNAME}/${REPO_NAME}"
+  echo "Repository created successfully with GitHub CLI: $FULL_REPO_URL"
+  REPO_CREATED=true
 else
-  echo "Warning: Failed to create GitHub repository. You may need to create it manually."
-  echo "To create the repository manually:"
-  echo "1. Go to https://github.com/new"
-  echo "2. Name the repository: ${REPO_NAME}"
-  echo "3. Make it public"
-  echo "4. Add the description: Browser-based ${INPUT_FORMAT} to ${OUTPUT_FORMAT} converter"
-  echo "5. Create repository"
-  echo "6. Push your local code with:"
-  echo "   git remote add origin https://github.com/YOUR_USERNAME/${REPO_NAME}.git"
-  echo "   git push -u origin master"
+  echo "GitHub CLI method failed. Trying alternative methods..."
   
-  FULL_REPO_URL="(manual creation required)"
+  GITHUB_USERNAME=$(gh api user | jq -r '.login' 2>/dev/null)
+  if [ -z "$GITHUB_USERNAME" ]; then
+    read -p "Enter your GitHub username: " GITHUB_USERNAME
+  fi
+  
+  echo "Attempting repository creation with curl and GitHub API..."
+  
+  if [ -z "$GITHUB_TOKEN" ]; then
+    TOKEN_FILE="$HOME/.github_token"
+    if [ -f "$TOKEN_FILE" ]; then
+      GITHUB_TOKEN=$(cat "$TOKEN_FILE")
+    else
+      echo "GitHub Personal Access Token is required for API access."
+      echo "You can create one at https://github.com/settings/tokens"
+      echo "Make sure it has 'repo' scope."
+      read -p "Enter your GitHub Personal Access Token: " GITHUB_TOKEN
+      
+      if [ -n "$GITHUB_TOKEN" ]; then
+        read -p "Save token for future use? (y/n): " SAVE_TOKEN
+        if [[ "$SAVE_TOKEN" == "y" || "$SAVE_TOKEN" == "Y" ]]; then
+          echo "$GITHUB_TOKEN" > "$TOKEN_FILE"
+          chmod 600 "$TOKEN_FILE"
+          echo "Token saved to $TOKEN_FILE"
+        fi
+      fi
+    fi
+  fi
+  
+  if [ -n "$GITHUB_TOKEN" ]; then
+    REPO_CREATION_RESPONSE=$(curl -s -X POST \
+      -H "Authorization: token $GITHUB_TOKEN" \
+      -H "Accept: application/vnd.github.v3+json" \
+      https://api.github.com/user/repos \
+      -d "{\"name\":\"$REPO_NAME\",\"description\":\"Browser-based ${INPUT_FORMAT} to ${OUTPUT_FORMAT} converter\",\"private\":false}")
+    
+    if echo "$REPO_CREATION_RESPONSE" | grep -q "\"name\"[[:space:]]*:[[:space:]]*\"$REPO_NAME\""; then
+      echo "Repository created successfully with GitHub API!"
+      FULL_REPO_URL="https://github.com/${GITHUB_USERNAME}/${REPO_NAME}"
+      
+      git remote add origin "https://github.com/${GITHUB_USERNAME}/${REPO_NAME}.git"
+      
+      echo "Pushing code to the new repository..."
+      if git -c "http.https://github.com.extraheader=Authorization: token $GITHUB_TOKEN" push -u origin master; then
+        echo "Code pushed successfully to $FULL_REPO_URL"
+        REPO_CREATED=true
+      else
+        echo "Failed to push using token. Trying SSH..."
+      fi
+    else
+      ERROR_MESSAGE=$(echo "$REPO_CREATION_RESPONSE" | jq -r '.message' 2>/dev/null)
+      if [ -n "$ERROR_MESSAGE" ] && [ "$ERROR_MESSAGE" != "null" ]; then
+        echo "Error creating repository with API: $ERROR_MESSAGE"
+      else
+        echo "Unknown error creating repository with API."
+      fi
+    fi
+  else
+    echo "No GitHub token available. Skipping API method."
+  fi
+  
+  if [ "$REPO_CREATED" = false ]; then
+    echo "Attempting repository creation with direct git commands (SSH)..."
+    
+    if [ -z "$GITHUB_USERNAME" ]; then
+      read -p "Enter your GitHub username: " GITHUB_USERNAME
+    fi
+    
+    if [ -n "$GITHUB_USERNAME" ]; then
+      git remote add origin "git@github.com:${GITHUB_USERNAME}/${REPO_NAME}.git"
+      if git push -u origin master; then
+        echo "Repository created successfully with SSH!"
+        FULL_REPO_URL="https://github.com/${GITHUB_USERNAME}/${REPO_NAME}"
+        REPO_CREATED=true
+      else
+        echo "Failed to create repository with SSH."
+      fi
+    fi
+  fi
+  
+  if [ "$REPO_CREATED" = false ]; then
+    echo ""
+    echo "All automatic repository creation methods failed."
+    echo "To create the repository manually:"
+    echo "----------------------------------------"
+    echo "1. Go to https://github.com/new"
+    echo "2. Name the repository: ${REPO_NAME}"
+    echo "3. Make it public"
+    echo "4. Add the description: Browser-based ${INPUT_FORMAT} to ${OUTPUT_FORMAT} converter"
+    echo "5. Create repository"
+    echo "6. Then run these commands in your project directory:"
+    echo "   cd ${PROJECT_DIR}"
+    echo "   git remote add origin https://github.com/YOUR_USERNAME/${REPO_NAME}.git"
+    echo "   git push -u origin master"
+    echo "----------------------------------------"
+    
+    FULL_REPO_URL="(manual creation required)"
+    
+    read -p "Would you like to try setting up the remote and pushing now? (y/n): " SETUP_REMOTE
+    if [[ "$SETUP_REMOTE" == "y" || "$SETUP_REMOTE" == "Y" ]]; then
+      if [ -z "$GITHUB_USERNAME" ]; then
+        read -p "GitHub username: " GITHUB_USERNAME
+      fi
+      
+      if [ -n "$GITHUB_USERNAME" ]; then
+        echo "Setting up remote and pushing to GitHub..."
+        git remote add origin "https://github.com/${GITHUB_USERNAME}/${REPO_NAME}.git" 2>/dev/null || git remote set-url origin "https://github.com/${GITHUB_USERNAME}/${REPO_NAME}.git"
+        if git push -u origin master; then
+          FULL_REPO_URL="https://github.com/${GITHUB_USERNAME}/${REPO_NAME}"
+          echo "Successfully pushed to $FULL_REPO_URL"
+          REPO_CREATED=true
+        else
+          echo "Push failed. You may need to create the repository first."
+        fi
+      fi
+    fi
+  fi
 fi
 
 cd ..
