@@ -3,6 +3,9 @@
 # NewSite.Go - Interactive script for creating new converter projects
 # Usage: ./NewSite.Go
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 echo "🚀 Welcome to the Converter Project Creator 🚀"
 echo "---------------------------------------------"
 echo ""
@@ -52,10 +55,21 @@ if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
   exit 0
 fi
 
-# Run the template creation script
+# Run the template creation script using the script's directory
 echo ""
 echo "Creating project..."
-./create-project-from-template.sh "$FOLDER" "$PROJECT_NAME" "$COLOR" "$FORMAT"
+
+# Check if the create-project-from-template.sh script exists in the current directory
+if [ -f "$SCRIPT_DIR/create-project-from-template.sh" ]; then
+  # Make sure the script is executable
+  chmod +x "$SCRIPT_DIR/create-project-from-template.sh"
+  
+  # Run the script with the provided parameters
+  "$SCRIPT_DIR/create-project-from-template.sh" "$FOLDER" "$PROJECT_NAME" "$COLOR" "$FORMAT"
+else
+  echo "Error: create-project-from-template.sh not found in $SCRIPT_DIR"
+  exit 1
+fi
 
 echo ""
 echo "✅ Project creation complete!"
