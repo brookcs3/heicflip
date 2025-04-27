@@ -174,10 +174,24 @@ git add .
 git commit -m "Initial commit for ${SITE_NAME}"
 
 echo "Creating GitHub repository for ${REPO_NAME}..."
-gh repo create "${REPO_NAME}" --public --description "Browser-based ${INPUT_FORMAT} to ${OUTPUT_FORMAT} converter" --source=. --remote=origin --push
-
-REPO_OWNER=$(gh api user | jq -r '.login')
-FULL_REPO_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}"
+if gh repo create "${REPO_NAME}" --public --description "Browser-based ${INPUT_FORMAT} to ${OUTPUT_FORMAT} converter" --source=. --remote=origin --push; then
+  REPO_OWNER=$(gh api user | jq -r '.login')
+  FULL_REPO_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}"
+  echo "Repository created successfully: $FULL_REPO_URL"
+else
+  echo "Warning: Failed to create GitHub repository. You may need to create it manually."
+  echo "To create the repository manually:"
+  echo "1. Go to https://github.com/new"
+  echo "2. Name the repository: ${REPO_NAME}"
+  echo "3. Make it public"
+  echo "4. Add the description: Browser-based ${INPUT_FORMAT} to ${OUTPUT_FORMAT} converter"
+  echo "5. Create repository"
+  echo "6. Push your local code with:"
+  echo "   git remote add origin https://github.com/YOUR_USERNAME/${REPO_NAME}.git"
+  echo "   git push -u origin master"
+  
+  FULL_REPO_URL="(manual creation required)"
+fi
 
 cd ..
 ./template-tracker-update.sh "$SITE_NAME" "$CONVERSION_MODE" "$PRIMARY_COLOR" "$PROJECT_DIR" "$FULL_REPO_URL"
